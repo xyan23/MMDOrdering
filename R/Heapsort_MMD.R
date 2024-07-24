@@ -19,7 +19,7 @@ heap_mmd <- function(Matrix, comp_fun) {
   distance <- function(point1, point2) {
     return(sqrt(sum((point1 - point2)^2)))
   }
-
+  set.seed(8)
   # Start with a random point
   start_index <- sample(1:nrow(Matrix), 1)
   # Store ordered points

@@ -4,3 +4,6 @@ export(build_heap)
 export(heap_mmd)
 export(heapify)
 export(heapsort)
+
+useDynLib(MMDOrdering)
+import(Rcpp)
