@@ -2,7 +2,7 @@ Package: MMDOrdering
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
 Authors@R: 
-    person("Xin", "Yan", , "xyan2@smu.edu, role = c("aut", "cre"),
+    person("Xin", "Yan", , "xyan2@smu.edu", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: Use maximum minimum ordering to order points.
 License: MIT + file LICENSE
