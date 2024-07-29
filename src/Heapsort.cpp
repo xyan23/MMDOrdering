@@ -2,63 +2,63 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-NumericMatrix heapify_c(NumericMatrix A, int i, int heap_size) {
-  A = clone(A);
+NumericMatrix heapify_c(NumericMatrix points, int index, int heap_size) {
+
   // Left child index
-  int l = 2 * i + 1;
+  int l = 2 * index + 1; 
   // Right child index
-  int r = 2 * i + 2;
-  int largest;
+  int r = 2 * index + 2; 
+  int largest; 
   NumericVector key;
 
   // Make sure this is a complete binary tree
   // Compare between root and left child
-  if (l < heap_size && A(l, 0) > A(i, 0)) {
+  if (l < heap_size && points(l, 0) > points(index, 0)) {
     largest = l;
   } else {
-    largest = i;
+    largest = index;
   }
   // Compare between largest and left child
-  if (r < heap_size && A(r, 0) > A(largest, 0)) {
+  if (r < heap_size && points(r, 0) > points(largest, 0)) {
     largest = r;
   }
   // If largest is not root
-  if (largest != i) {
+  if (largest != index) {
     // Swap the larger child with parent
-    key = A(i, _);
-    A(i, _) = A(largest, _);
-    A(largest, _) = key;
+    key = points(index, _);
+    points(index, _) = points(largest, _);
+    points(largest, _) = key;
     // Recursively heapify for sub-tree
-    A = heapify_c(A, largest, heap_size);
+    points = heapify_c(points, largest, heap_size);
   }
-
-  return(A);
+  
+  return(points);
 }
 
 // [[Rcpp::export]]
-NumericMatrix build_heap_c(NumericMatrix A) {
-  A = clone(A);
-  int heap_size = A.nrow();
+NumericMatrix build_heap_c(NumericMatrix points) {
+  
+  int heap_size = points.nrow();
   // Check all the parental nodes
   for (int i = floor(heap_size / 2); i >= 0; --i) {
-    A = heapify_c(A, i, heap_size);
+    points = heapify_c(points, i, heap_size);
   }
-  return(A);
+  return(points);
 }
 
 // [[Rcpp::export]]
-NumericMatrix heapsort_c(NumericMatrix A) {
-  A = clone(A);
-  int n = A.nrow();
-  A = build_heap_c(A);
+NumericMatrix heapsort_c(NumericMatrix points) {
+  
+  int n = points.nrow();
+  points = build_heap_c(points);
   NumericVector key;
   for (int i = n - 1; i >= 1; --i) {
     // Exchange the first element with the ith element
-    key = A(0, _);
-    A(0, _) = A(i, _);
-    A(i, _) = key;
+    key = points(0, _);
+    points(0, _) = points(i, _);
+    points(i, _) = key;
     // Decrease the heap size by setting the heap size to i
-    A = heapify_c(A, 0, i);
+    points = heapify_c(points, 0, i);
   }
-  return(A);
+  return(points);
 }

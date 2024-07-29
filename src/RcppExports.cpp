@@ -11,37 +11,37 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // heapify_c
-NumericMatrix heapify_c(NumericMatrix A, int i, int heap_size);
-RcppExport SEXP _MMDOrdering_heapify_c(SEXP ASEXP, SEXP iSEXP, SEXP heap_sizeSEXP) {
+NumericMatrix heapify_c(NumericMatrix points, int index, int heap_size);
+RcppExport SEXP _MMDOrdering_heapify_c(SEXP pointsSEXP, SEXP indexSEXP, SEXP heap_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type A(ASEXP);
-    Rcpp::traits::input_parameter< int >::type i(iSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type points(pointsSEXP);
+    Rcpp::traits::input_parameter< int >::type index(indexSEXP);
     Rcpp::traits::input_parameter< int >::type heap_size(heap_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(heapify_c(A, i, heap_size));
+    rcpp_result_gen = Rcpp::wrap(heapify_c(points, index, heap_size));
     return rcpp_result_gen;
 END_RCPP
 }
 // build_heap_c
-NumericMatrix build_heap_c(NumericMatrix A);
-RcppExport SEXP _MMDOrdering_build_heap_c(SEXP ASEXP) {
+NumericMatrix build_heap_c(NumericMatrix points);
+RcppExport SEXP _MMDOrdering_build_heap_c(SEXP pointsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type A(ASEXP);
-    rcpp_result_gen = Rcpp::wrap(build_heap_c(A));
+    Rcpp::traits::input_parameter< NumericMatrix >::type points(pointsSEXP);
+    rcpp_result_gen = Rcpp::wrap(build_heap_c(points));
     return rcpp_result_gen;
 END_RCPP
 }
 // heapsort_c
-NumericMatrix heapsort_c(NumericMatrix A);
-RcppExport SEXP _MMDOrdering_heapsort_c(SEXP ASEXP) {
+NumericMatrix heapsort_c(NumericMatrix points);
+RcppExport SEXP _MMDOrdering_heapsort_c(SEXP pointsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type A(ASEXP);
-    rcpp_result_gen = Rcpp::wrap(heapsort_c(A));
+    Rcpp::traits::input_parameter< NumericMatrix >::type points(pointsSEXP);
+    rcpp_result_gen = Rcpp::wrap(heapsort_c(points));
     return rcpp_result_gen;
 END_RCPP
 }

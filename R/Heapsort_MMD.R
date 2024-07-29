@@ -1,6 +1,6 @@
 #' Use maximum minimum distance to order points
 #'
-#' @param Matrix A n by 2 matrix where each row represents a point.
+#' @param points A n by 2 matrix where each row represents a point.
 #' @param comp_fun A compare function which states compare criterion in heap.
 #'
 #' @return A matrix of ordered points.
@@ -14,18 +14,18 @@
 #' comparison_criterion <- p1[3] > p2[3]}
 #' heap_mmd(m, compare_mmd)
 
-heap_mmd <- function(Matrix, comp_fun) {
+heap_mmd <- function(points, comp_fun) {
   #Calculate the distance between two points
   distance <- function(point1, point2) {
     return(sqrt(sum((point1 - point2)^2)))
   }
   set.seed(8)
   # Start with a random point
-  start_index <- sample(1:nrow(Matrix), 1)
+  start_index <- sample(1:nrow(points), 1)
   # Store ordered points
-  ordered_points <- Matrix[start_index, , drop = FALSE]
+  ordered_points <- points[start_index, , drop = FALSE]
   # Store remaining points
-  remaining_points <- Matrix[-start_index, , drop = FALSE]
+  remaining_points <- points[-start_index, , drop = FALSE]
 
   # Find the distance from the first ordered point
   dist_vec <- c()
