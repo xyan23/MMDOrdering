@@ -20,42 +20,39 @@ grid_order_points <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
   }
 
   ordered_grid <- cbind(ordered_grid,
-                        grid_loc(ordered_grid, 1, grid_x_size),
-                        grid_loc(ordered_grid, 2, grid_y_size),
+                        col_loc = grid_loc(ordered_grid, 1, grid_x_size),
+                        row_loc = grid_loc(ordered_grid, 2, grid_y_size),
                         grid_order = c(1:num_boxes))
   ordered_grid <- cbind(ordered_grid,
                         # The fourth column for column and the fifth column for row
-                        grid_index = max(ordered_grid[, 3]) * (ordered_grid[, 4] - 1) + ordered_grid[, 3])
+                        grid_index = grid_x_dim * (ordered_grid[, "row_loc"] - 1) + ordered_grid[, "col_loc"])
 
 
   # Assign the points to the grid_box
   points <- cbind(points,
                   dist_vec = rep(NA, nrow(points)),
-                  grid_loc(points, 1, grid_x_size),
-                  grid_loc(points, 2, grid_y_size),
+                  col_loc = grid_loc(points, 1, grid_x_size),
+                  row_loc = grid_loc(points, 2, grid_y_size),
                   grid_order = rep(NA, nrow(points)))
 
   points <- cbind(points,
                   # The fourth column for column and the fifth column for row
-                  grid_index = grid_x_dim * (points[, 5] - 1) + points[, 4],
-                  index = c(1:nrow(points)))
+                  grid_index = grid_x_dim * (points[, "row_loc"] - 1) + points[, "col_loc"],
+                  point_index = c(1:nrow(points)))
 
   for (i in 1:nrow(points)) {
-    same_grid_index <- which(points[i, 7] == ordered_grid[ , 6])
-    points[i,6] <- ordered_grid[same_grid_index, 5]
+    same_grid_index <- which(points[i, "grid_index"] == ordered_grid[ , "grid_index"])
+    points[i, "grid_order"] <- ordered_grid[same_grid_index, "grid_order"]
   }
-  print(points)
-}
 
-grid_box_ordering <- function(points, comp_fun) {
+
+
   # Calculate the distance between two points
   distance <- function(point1, point2) {
     return(sqrt(sum((point1 - point2)^2)))
   }
 
   points <- points[, -c(4:5)]
-  points <- cbind(points,
-                  ordered_points = rep(NA, nrow(points)))
 
   # Determine neighboring grid
   neighboring_grid <- function(index){
@@ -72,72 +69,99 @@ grid_box_ordering <- function(points, comp_fun) {
     }
   }
 
-  remaining_points <- points
-  ordered_points <- matrix(nrow = 0, ncol = 7)
-  sub_ordered_points <- matrix(nrow = 0, ncol = 7)
-  # Order the remaining points
-  while (nrow(remaining_points) > 1) {
-    for (i in 1:num_boxes){
-      # Find points in the neighborhood
-      neighboring_grid_index <- neighboring_grid(i)
-      sub_points <- remaining_points[remaining_points[ , 4] == i, ]
-      # ???? Debug
-      for (k in 1:length(neighboring_grid_index)) {
-        neighbor_points <- remaining_points[remaining_points[ , 4] == neighboring_grid_index[k]]
-        sub_points <- rbind(sub_points,
-                            neighbor_points)
-      }
+  # For each grid box with its neighboring, mark ordered and remaining points
+  ordered_list <- vector("list", num_boxes)
+  remaining_list <- vector("list", num_boxes)
+  for (i in 1:num_boxes) {
+    grid_order <- i
+    sub_points_index <- which(points[ , "grid_order"] == i)
+    remaining_list[[i]] <- c(remaining_list[[i]], sub_points_index)
+    # Find points in the neighborhood
+    grid_index <- points[sub_points_index[1], "grid_index"]
+    neighboring_grid_index <- neighboring_grid(grid_index)
 
-      # Check is there already an ordered points
-      check_column_na <- function(matrix, col_index) {
-        return(all(is.na(matrix[, col_index])))
+    for (k in 1:length(neighboring_grid_index)) {
+      neighbor_points_index <- which(points[ , "grid_index"] == neighboring_grid_index[k])
+      remaining_list[[i]] <- c(remaining_list[[i]], neighbor_points_index)
+    }
+  }
+
+  # Order points
+  ordered_points <- matrix(nrow = 0, ncol = 6)
+  while (nrow(ordered_points) < nrow(points)) {
+    for (i in 1:num_boxes){
+
+      sub_points <- matrix(nrow = 0, ncol = 6)
+      for (j in 1:length(remaining_list[[i]])) {
+        sub_points <- rbind(sub_points, points[remaining_list[[i]][j], ])
       }
 
       # If there is not an ordered points in the neighborhood, find the point closest to center
-      if (check_column_na(sub_points, 7)) {
+      if (length(ordered_list[[i]]) == 0) {
         first_dist <- rep(NA, nrow(sub_points))
         for (j in 1:nrow(sub_points)) {
-          first_dist[j] <- distance(sub_points[j,], ordered_grid[i, ])
+          first_dist[j] <- distance(sub_points[j, 1:2], ordered_grid[i, 1:2])
         }
         start_index <- which.min(first_dist)
-        sub_ordered_points <- rbind(sub_ordered_points,
-                                    sub_points[start_index, , drop = FALSE])
         # Find the point's original index
         point_index <- sub_points[start_index, 6]
-        ordered_points <- rbind(ordered_points,
-                                remaining_points[point_index, , drop = FALSE])
-
-        sub_remaining_points <- sub_points[-start_index, , drop = FALSE]
-        remaining_points <- remaining_points[-point_index, , drop = FALSE]
-
-
+        # Find neighborhood with this point_index
+        list_index <- which(sapply(remaining_list, function(x) point_index %in% x))
         # Mark points as ordered
-        sub_points[start_index, 7] <- 1
+        for (j in list_index) {
+          ordered_list[[j]] <- c(ordered_list[[j]], point_index)
+        }
+
+        ordered_points <- rbind(ordered_points,
+                                points[point_index, , drop = FALSE])
+
+        remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
 
       } else {
         # Current gird points
-        current_grid_points <- remaining_points[remaining_points[ , 4] == i, ]
+        current_grid_points <- matrix(nrow = 0, ncol = 6)
+        current_grid_points <- rbind(current_grid_points,
+                                     sub_points[sub_points[ , "grid_order"] == i, ])
+
+        # Ordered points in the neighborhood
+        neighbor_ordered_points <- matrix(nrow = 0, ncol = 6)
+        for (j in 1:length(ordered_list[[i]])) {
+          neighbor_ordered_points <- rbind(neighbor_ordered_points, points[ordered_list[[i]][j], ])
+        }
+
         # Find the next ordered points
         for (j in 1:nrow(current_grid_points)) {
-          num_sub_ordered_points <- nrow(sub_ordered_points)
-          dist <- distance(current_grid_points[j,], sub_ordered_points[num_sub_ordered_points, ])
-          if (is.na(current_grid_points[j, 3])) {
-            current_grid_points[j, 3] <- dist
-          } else if (dist < current_grid_points[i,3]) {
-            current_grid_points[j, 3] <- dist
+          num_neighbor_ordered_points <- nrow(neighbor_ordered_points)
+          dist <- distance(current_grid_points[j, 1:2], neighbor_ordered_points[num_neighbor_ordered_points, 1:2])
+          if (is.na(current_grid_points[j, "dist_vec"])) {
+            current_grid_points[j, "dist_vec"] <- dist
+            index <- current_grid_points[j, "point_index"]
+            points[index, "dist_vec"] <- dist
+
+          } else if (dist < current_grid_points[i, "dist_vec"]) {
+            current_grid_points[j, "dist_vec"] <- dist
+            index <- current_grid_points[j, "point_index"]
+            points[index, "dist_vec"] <- dist
           }
         }
         current_grid_points <- build_heap(current_grid_points, compare_mmd)
-        sub_ordered_points <- rbind(sub_ordered_points,
-                                    current_grid_points[1, ])
+
+        # Find the point's original index
         point_index <- current_grid_points[1, 6]
+        # Find neighborhood with this point_index
+        list_index <- which(sapply(remaining_list, function(x) point_index %in% x))
+        # Mark points as ordered
+        for (j in list_index) {
+          ordered_list[[j]] <- c(ordered_list[[j]], point_index)
+        }
+
         ordered_points <- rbind(ordered_points,
                                 current_grid_points[1, ])
 
-        remaining_points <- remaining_points[-point_index, , drop = FALSE]
+        remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
       }
     }
   }
-  ordered_points <- rbind(ordered_points, remaining_points[1, ])
   return(ordered_points)
 }
+
