@@ -1,4 +1,4 @@
-grid_order_points <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
+grid_box_ordering <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
   # Determine the size of each grid box
   x_range <- 1
   y_range <- 1
@@ -53,7 +53,7 @@ grid_order_points <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
   }
 
   points <- points[, -c(4:5)]
-
+  remaining_points <- points
   # Determine neighboring grid
   neighboring_grid <- function(index){
     if (index == 1) {
@@ -88,9 +88,9 @@ grid_order_points <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
 
   # Order points
   ordered_points <- matrix(nrow = 0, ncol = 6)
-  while (nrow(ordered_points) < nrow(points)) {
+  while (nrow(remaining_points) > 1) {
     for (i in 1:num_boxes){
-
+      # Find points in the neighborhood
       sub_points <- matrix(nrow = 0, ncol = 6)
       for (j in 1:length(remaining_list[[i]])) {
         sub_points <- rbind(sub_points, points[remaining_list[[i]][j], ])
@@ -114,7 +114,7 @@ grid_order_points <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
 
         ordered_points <- rbind(ordered_points,
                                 points[point_index, , drop = FALSE])
-
+        remaining_points <- remaining_points[remaining_points[, "point_index"] != point_index, , drop = FALSE]
         remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
 
       } else {
@@ -122,46 +122,73 @@ grid_order_points <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
         current_grid_points <- matrix(nrow = 0, ncol = 6)
         current_grid_points <- rbind(current_grid_points,
                                      sub_points[sub_points[ , "grid_order"] == i, ])
-
-        # Ordered points in the neighborhood
-        neighbor_ordered_points <- matrix(nrow = 0, ncol = 6)
-        for (j in 1:length(ordered_list[[i]])) {
-          neighbor_ordered_points <- rbind(neighbor_ordered_points, points[ordered_list[[i]][j], ])
-        }
-
-        # Find the next ordered points
-        for (j in 1:nrow(current_grid_points)) {
-          num_neighbor_ordered_points <- nrow(neighbor_ordered_points)
-          dist <- distance(current_grid_points[j, 1:2], neighbor_ordered_points[num_neighbor_ordered_points, 1:2])
-          if (is.na(current_grid_points[j, "dist_vec"])) {
-            current_grid_points[j, "dist_vec"] <- dist
-            index <- current_grid_points[j, "point_index"]
-            points[index, "dist_vec"] <- dist
-
-          } else if (dist < current_grid_points[i, "dist_vec"]) {
-            current_grid_points[j, "dist_vec"] <- dist
-            index <- current_grid_points[j, "point_index"]
-            points[index, "dist_vec"] <- dist
+        if (nrow(current_grid_points) > 1){
+          # Ordered points in the neighborhood
+          neighbor_ordered_points <- matrix(nrow = 0, ncol = 6)
+          for (j in 1:length(ordered_list[[i]])) {
+            neighbor_ordered_points <- rbind(neighbor_ordered_points, points[ordered_list[[i]][j], ])
           }
+
+          # Find the next ordered points
+          for (j in 1:nrow(current_grid_points)) {
+            num_neighbor_ordered_points <- nrow(neighbor_ordered_points)
+            dist_vec <- c()
+            for (k in 1:num_neighbor_ordered_points){
+              dist_vec[k] <- distance(current_grid_points[j, 1:2], neighbor_ordered_points[k, 1:2])
+              dist <- min(dist_vec)
+            }
+            current_grid_points[j, "dist_vec"] <- dist
+          }
+          current_grid_points <- build_heap(current_grid_points, compare_mmd)
+          # Find the point's original index
+          point_index <- current_grid_points[1, 6]
+          # Find neighborhood with this point_index
+          list_index <- which(sapply(remaining_list, function(x) point_index %in% x))
+          # Mark points as ordered
+          for (j in list_index) {
+            ordered_list[[j]] <- c(ordered_list[[j]], point_index)
+          }
+
+          ordered_points <- rbind(ordered_points,
+                                  current_grid_points[1, ])
+          remaining_points <- remaining_points[remaining_points[, "point_index"] != point_index, , drop = FALSE]
+          remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
+
+        } else if (nrow(current_grid_points) == 1) {
+          # Find the point's original index
+          point_index <- current_grid_points[1, 6]
+          # Find neighborhood with this point_index
+          list_index <- which(sapply(remaining_list, function(x) point_index %in% x))
+          # Mark points as ordered
+          for (j in list_index) {
+            ordered_list[[j]] <- c(ordered_list[[j]], point_index)
+          }
+
+          ordered_points <- rbind(ordered_points,
+                                  current_grid_points[1, ])
+          remaining_points <- remaining_points[remaining_points[, "point_index"] != point_index, , drop = FALSE]
+          remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
+        } else {
+          ordered_points <- ordered_points
+          ordered_list <- ordered_list
+          remaining_points <- remaining_points
+          remaining_list <- remaining_list
         }
-        current_grid_points <- build_heap(current_grid_points, compare_mmd)
-
-        # Find the point's original index
-        point_index <- current_grid_points[1, 6]
-        # Find neighborhood with this point_index
-        list_index <- which(sapply(remaining_list, function(x) point_index %in% x))
-        # Mark points as ordered
-        for (j in list_index) {
-          ordered_list[[j]] <- c(ordered_list[[j]], point_index)
-        }
-
-        ordered_points <- rbind(ordered_points,
-                                current_grid_points[1, ])
-
-        remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
       }
     }
   }
+  ordered_points <- rbind(ordered_points, remaining_points[1, ])
   return(ordered_points)
 }
+
+set.seed(43)
+points <- matrix(runif(16, 0, 1), ncol = 2)
+
+grid_x_dim <- 2  # number of grid boxes in x direction
+grid_y_dim <- 2  # number of grid boxes in y direction
+
+
+grid_box_ordering(points, compare_mmd, grid_x_dim, grid_y_dim)
+
+
 
