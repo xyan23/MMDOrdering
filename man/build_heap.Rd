@@ -4,10 +4,10 @@
 \alias{build_heap}
 \title{Build heap matrix}
 \usage{
-build_heap(Matrix, comp_fun)
+build_heap(points, comp_fun)
 }
 \arguments{
-\item{Matrix}{A n by 2 matrix where each row represents a point.}
+\item{points}{A n by 2 matrix where each row represents a point.}
 
 \item{comp_fun}{A compare function which states compare criterion in heap.}
 }

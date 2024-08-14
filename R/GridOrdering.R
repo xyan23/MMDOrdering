@@ -1,5 +1,25 @@
+#' Order points in grid box ordering algorithm
+#'
+#' @param points A n by 2 matrix where each row represents a point.
+#' @param comp_fun A compare function which states compare criterion in heap.
+#' @param grid_x_dim The number of grid boxes along the x-axis.
+#' @param grid_y_dim The number of grid boxes along the y-axis.
+#'
+#' @return A matrix of ordered points.
+#' @export
+#'
+#' @examples
+#' set.seed(42)
+#' points <- matrix(runif(200, 0, 1), ncol = 2)
+#' grid_x_dim <- 2  # number of grid boxes in x direction
+#' grid_y_dim <- 2  # number of grid boxes in y direction
+#' compare_mmd <- function(p1, p2) {
+#' comparison_criterion <- p1[3] > p2[3]}
+#' grid_box_ordering(points, compare_mmd, grid_x_dim, grid_y_dim)
+
 grid_box_ordering <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
   # Determine the size of each grid box
+  # Assume it is a 1*1 domain for now
   x_range <- 1
   y_range <- 1
   grid_x_size <- x_range/grid_x_dim
@@ -27,7 +47,6 @@ grid_box_ordering <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
                         # The fourth column for column and the fifth column for row
                         grid_index = grid_x_dim * (ordered_grid[, "row_loc"] - 1) + ordered_grid[, "col_loc"])
 
-
   # Assign the points to the grid_box
   points <- cbind(points,
                   dist_vec = rep(NA, nrow(points)),
@@ -44,8 +63,6 @@ grid_box_ordering <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
     same_grid_index <- which(points[i, "grid_index"] == ordered_grid[ , "grid_index"])
     points[i, "grid_order"] <- ordered_grid[same_grid_index, "grid_order"]
   }
-
-
 
   # Calculate the distance between two points
   distance <- function(point1, point2) {
@@ -92,8 +109,12 @@ grid_box_ordering <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
     for (i in 1:num_boxes){
       # Find points in the neighborhood
       sub_points <- matrix(nrow = 0, ncol = 6)
-      for (j in 1:length(remaining_list[[i]])) {
-        sub_points <- rbind(sub_points, points[remaining_list[[i]][j], ])
+      if (length(remaining_list[[i]]) == 0){
+        next
+      } else {
+        for (j in 1:length(remaining_list[[i]])) {
+          sub_points <- rbind(sub_points, points[remaining_list[[i]][j], ])
+        }
       }
 
       # If there is not an ordered points in the neighborhood, find the point closest to center
@@ -168,11 +189,8 @@ grid_box_ordering <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
                                   current_grid_points[1, ])
           remaining_points <- remaining_points[remaining_points[, "point_index"] != point_index, , drop = FALSE]
           remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
-        } else {
-          ordered_points <- ordered_points
-          ordered_list <- ordered_list
-          remaining_points <- remaining_points
-          remaining_list <- remaining_list
+        } else if (nrow(current_grid_points) == 0) {
+          next
         }
       }
     }
@@ -180,15 +198,6 @@ grid_box_ordering <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
   ordered_points <- rbind(ordered_points, remaining_points[1, ])
   return(ordered_points)
 }
-
-set.seed(43)
-points <- matrix(runif(16, 0, 1), ncol = 2)
-
-grid_x_dim <- 2  # number of grid boxes in x direction
-grid_y_dim <- 2  # number of grid boxes in y direction
-
-
-grid_box_ordering(points, compare_mmd, grid_x_dim, grid_y_dim)
 
 
 

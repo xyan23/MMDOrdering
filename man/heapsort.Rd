@@ -4,10 +4,10 @@
 \alias{heapsort}
 \title{Using heap with certain compare criterion to order points.}
 \usage{
-heapsort(Matrix, comp_fun)
+heapsort(points, comp_fun)
 }
 \arguments{
-\item{Matrix}{A n by 2 matrix where each row represents a point.}
+\item{points}{A n by 2 matrix where each row represents a point.}
 
 \item{comp_fun}{A compare function which states compare criterion in heap.}
 }

@@ -4,10 +4,10 @@
 \alias{heapify}
 \title{Check point on each index to fit heap property}
 \usage{
-heapify(Matrix, index, comp_fun)
+heapify(points, index, comp_fun)
 }
 \arguments{
-\item{Matrix}{A n by 2 matrix where each row represents a point.}
+\item{points}{A n by 2 matrix where each row represents a point.}
 
 \item{index}{Point index.}
 

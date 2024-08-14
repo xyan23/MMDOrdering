@@ -4,10 +4,10 @@
 \alias{heap_mmd}
 \title{Use maximum minimum distance to order points}
 \usage{
-heap_mmd(Matrix, comp_fun)
+heap_mmd(points, comp_fun)
 }
 \arguments{
-\item{Matrix}{A n by 2 matrix where each row represents a point.}
+\item{points}{A n by 2 matrix where each row represents a point.}
 
 \item{comp_fun}{A compare function which states compare criterion in heap.}
 }
