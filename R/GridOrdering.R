@@ -19,7 +19,6 @@
 
 grid_box_ordering <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
   # Determine the size of each grid box
-  # Assume it is a 1*1 domain for now
   x_range <- 1
   y_range <- 1
   grid_x_size <- x_range/grid_x_dim
@@ -195,7 +194,9 @@ grid_box_ordering <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
       }
     }
   }
-  ordered_points <- rbind(ordered_points, remaining_points[1, ])
+  if (nrow(remaining_points) == 1){
+    ordered_points <- rbind(ordered_points, remaining_points[1, ])
+  }
   return(ordered_points)
 }
 
