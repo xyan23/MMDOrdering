@@ -93,7 +93,8 @@ grid_box_ordering <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
     sub_points_index <- which(points[ , "grid_order"] == i)
     remaining_list[[i]] <- c(remaining_list[[i]], sub_points_index)
     # Find points in the neighborhood
-    grid_index <- points[sub_points_index[1], "grid_index"]
+    #grid_index <- points[sub_points_index[1], "grid_index"]
+    grid_index <- ordered_grid[i, "grid_index"]
     neighboring_grid_index <- neighboring_grid(grid_index)
 
     for (k in 1:length(neighboring_grid_index)) {
@@ -114,82 +115,79 @@ grid_box_ordering <- function(points, comp_fun, grid_x_dim, grid_y_dim) {
         for (j in 1:length(remaining_list[[i]])) {
           sub_points <- rbind(sub_points, points[remaining_list[[i]][j], ])
         }
-      }
 
-      # If there is not an ordered points in the neighborhood, find the point closest to center
-      if (length(ordered_list[[i]]) == 0) {
-        first_dist <- rep(NA, nrow(sub_points))
-        for (j in 1:nrow(sub_points)) {
-          first_dist[j] <- distance(sub_points[j, 1:2], ordered_grid[i, 1:2])
-        }
-        start_index <- which.min(first_dist)
-        # Find the point's original index
-        point_index <- sub_points[start_index, 6]
-        # Find neighborhood with this point_index
-        list_index <- which(sapply(remaining_list, function(x) point_index %in% x))
-        # Mark points as ordered
-        for (j in list_index) {
-          ordered_list[[j]] <- c(ordered_list[[j]], point_index)
-        }
-
-        ordered_points <- rbind(ordered_points,
-                                points[point_index, , drop = FALSE])
-        remaining_points <- remaining_points[remaining_points[, "point_index"] != point_index, , drop = FALSE]
-        remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
-
-      } else {
         # Current gird points
         current_grid_points <- matrix(nrow = 0, ncol = 6)
         current_grid_points <- rbind(current_grid_points,
                                      sub_points[sub_points[ , "grid_order"] == i, ])
-        if (nrow(current_grid_points) > 1){
-          # Ordered points in the neighborhood
-          neighbor_ordered_points <- matrix(nrow = 0, ncol = 6)
-          for (j in 1:length(ordered_list[[i]])) {
-            neighbor_ordered_points <- rbind(neighbor_ordered_points, points[ordered_list[[i]][j], ])
-          }
-
-          # Find the next ordered points
-          for (j in 1:nrow(current_grid_points)) {
-            num_neighbor_ordered_points <- nrow(neighbor_ordered_points)
-            dist_vec <- c()
-            for (k in 1:num_neighbor_ordered_points){
-              dist_vec[k] <- distance(current_grid_points[j, 1:2], neighbor_ordered_points[k, 1:2])
-              dist <- min(dist_vec)
-            }
-            current_grid_points[j, "dist_vec"] <- dist
-          }
-          current_grid_points <- build_heap(current_grid_points, compare_mmd)
-          # Find the point's original index
-          point_index <- current_grid_points[1, 6]
-          # Find neighborhood with this point_index
-          list_index <- which(sapply(remaining_list, function(x) point_index %in% x))
-          # Mark points as ordered
-          for (j in list_index) {
-            ordered_list[[j]] <- c(ordered_list[[j]], point_index)
-          }
-
-          ordered_points <- rbind(ordered_points,
-                                  current_grid_points[1, ])
-          remaining_points <- remaining_points[remaining_points[, "point_index"] != point_index, , drop = FALSE]
-          remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
-
-        } else if (nrow(current_grid_points) == 1) {
-          # Find the point's original index
-          point_index <- current_grid_points[1, 6]
-          # Find neighborhood with this point_index
-          list_index <- which(sapply(remaining_list, function(x) point_index %in% x))
-          # Mark points as ordered
-          for (j in list_index) {
-            ordered_list[[j]] <- c(ordered_list[[j]], point_index)
-          }
-
-          ordered_points <- rbind(ordered_points,
-                                  current_grid_points[1, ])
-          remaining_points <- remaining_points[remaining_points[, "point_index"] != point_index, , drop = FALSE]
-          remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
-        } else if (nrow(current_grid_points) == 0) {
+        if (nrow(current_grid_points) == 0){
           next
+        } else if (nrow(current_grid_points) == 1){
+          # Find the point's original index
+          point_index <- current_grid_points[1, 6]
+          # Find neighborhood with this point_index
+          list_index <- which(sapply(remaining_list, function(x) point_index %in% x))
+          # Mark points as ordered
+          for (j in list_index) {
+            ordered_list[[j]] <- c(ordered_list[[j]], point_index)
+          }
+          ordered_points <- rbind(ordered_points,
+                                  current_grid_points[1, ])
+          remaining_points <- remaining_points[remaining_points[, "point_index"] != point_index, , drop = FALSE]
+          remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
+        } else {
+          # If there is not an ordered points in the neighborhood, find the point closest to center
+          if (length(ordered_list[[i]]) == 0) {
+            first_dist <- rep(NA, nrow(current_grid_points))
+            for (j in 1:nrow(current_grid_points)) {
+              first_dist[j] <- distance(current_grid_points[j, 1:2], ordered_grid[i, 1:2])
+            }
+            start_index <- which.min(first_dist)
+            # Find the point's original index
+            point_index <- current_grid_points[start_index, 6]
+            # Find neighborhood with this point_index
+            list_index <- which(sapply(remaining_list, function(x) point_index %in% x))
+            # Mark points as ordered
+            for (j in list_index) {
+              ordered_list[[j]] <- c(ordered_list[[j]], point_index)
+            }
+
+            ordered_points <- rbind(ordered_points,
+                                    points[point_index, , drop = FALSE])
+            remaining_points <- remaining_points[remaining_points[, "point_index"] != point_index, , drop = FALSE]
+            remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
+          } else {
+            # Ordered points in the neighborhood
+            neighbor_ordered_points <- matrix(nrow = 0, ncol = 6)
+            for (j in 1:length(ordered_list[[i]])) {
+              neighbor_ordered_points <- rbind(neighbor_ordered_points, points[ordered_list[[i]][j], ])
+            }
+
+            # Find the next ordered points
+            for (j in 1:nrow(current_grid_points)) {
+              num_neighbor_ordered_points <- nrow(neighbor_ordered_points)
+              dist_vec <- c()
+              for (k in 1:num_neighbor_ordered_points){
+                dist_vec[k] <- distance(current_grid_points[j, 1:2], neighbor_ordered_points[k, 1:2])
+                dist <- min(dist_vec)
+              }
+              current_grid_points[j, "dist_vec"] <- dist
+            }
+            current_grid_points <- build_heap(current_grid_points, compare_mmd)
+            # Find the point's original index
+            point_index <- current_grid_points[1, 6]
+            # Find neighborhood with this point_index
+            list_index <- which(sapply(remaining_list, function(x) point_index %in% x))
+            # Mark points as ordered
+            for (j in list_index) {
+              ordered_list[[j]] <- c(ordered_list[[j]], point_index)
+            }
+
+            ordered_points <- rbind(ordered_points,
+                                    current_grid_points[1, ])
+            remaining_points <- remaining_points[remaining_points[, "point_index"] != point_index, , drop = FALSE]
+            remaining_list <- lapply(remaining_list, function(x) x[x != point_index])
+          }
         }
       }
     }
